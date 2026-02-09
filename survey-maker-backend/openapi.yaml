@@ -1,0 +1,276 @@
+openapi: 3.0.3
+info:
+  title: SurveyMaker API
+  version: 1.0.0
+  description: OpenAPI description for Survey endpoints and auth (JWT).
+servers:
+  - url: http://localhost:5000
+    description: Local dev (adjust port if your app listens elsewhere)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    OptionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+      required:
+        - text
+
+    QuestionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        type:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/OptionDto'
+      required:
+        - text
+
+    SurveyListItemDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+
+    SurveyDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionDto'
+      required:
+        - title
+
+    CreateSurveyDto:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionDto'
+      required:
+        - title
+        - questions
+
+    UpdateSurveyDto:
+      allOf:
+        - $ref: '#/components/schemas/CreateSurveyDto'
+
+    FillAnswerDto:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        optionId:
+          type: integer
+          nullable: true
+        textAnswer:
+          type: string
+          nullable: true
+      required:
+        - questionId
+
+    FillSurveyDto:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/FillAnswerDto'
+      required:
+        - answers
+
+    FillResultDto:
+      type: object
+      properties:
+        responseId:
+          type: integer
+
+    LoginRequestDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+
+paths:
+  /api/auth/login:
+    post:
+      summary: Login and receive JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDto'
+      responses:
+        '200':
+          description: JWT token returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+
+  /api/surveys:
+    get:
+      summary: List surveys (authenticated)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Survey list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SurveyListItemDto'
+    post:
+      summary: Create survey (Admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSurveyDto'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+        '400':
+          description: Validation error
+        '403':
+          description: Requires Admin role
+
+  /api/surveys/{id}:
+    get:
+      summary: Get survey by id (authenticated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Survey
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyDto'
+        '404':
+          description: Not found
+    put:
+      summary: Update survey (Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSurveyDto'
+      responses:
+        '204':
+          description: No content
+        '404':
+          description: Not found
+    delete:
+      summary: Delete survey (Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /api/surveys/{id}/responses:
+    post:
+      summary: Submit answers for a survey (authenticated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FillSurveyDto'
+      responses:
+        '200':
+          description: Response created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FillResultDto'
+        '404':
+          description: Survey not found

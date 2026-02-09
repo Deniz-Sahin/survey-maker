@@ -1,0 +1,41 @@
+﻿services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: surveydb
+      POSTGRES_USER: survey_user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U survey_user -d surveydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "5000:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=surveydb;Username=survey_user;Password=password
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      SWAGGER_JSON: /spec/openapi.yaml
+    volumes:
+      - ./openapi.yaml:/spec/openapi.yaml:ro
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
