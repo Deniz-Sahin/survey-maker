@@ -4,6 +4,7 @@ using SurveyMaker.Api.Application.Dtos;
 using SurveyMaker.Api.Application.Services;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System;
 
 namespace SurveyMaker.Api.Controllers
 {
@@ -44,8 +45,15 @@ namespace SurveyMaker.Api.Controllers
         public async Task<IActionResult> Create([FromBody] CreateSurveyDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var id = await _svc.CreateAsync(dto);
-            return CreatedAtAction(nameof(Get), new { id }, new { id });
+            try
+            {
+                var id = await _svc.CreateAsync(dto);
+                return CreatedAtAction(nameof(Get), new { id }, new { id });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         // PUT: api/surveys/{id}
@@ -62,6 +70,10 @@ namespace SurveyMaker.Api.Controllers
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
         }
 
@@ -90,6 +102,28 @@ namespace SurveyMaker.Api.Controllers
             {
                 return NotFound();
             }
+        }
+
+        // GET: api/surveys/{id}/submissions
+        [HttpGet("{id:int}/submissions")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Submissions(int id)
+        {
+            var dto = await _svc.GetSubmissionsAsync(id);
+            if (dto == null) return NotFound();
+            return Ok(dto);
+        }
+
+        // GET: api/surveys/assigned
+        // Returns surveys assigned to the current user that the user has NOT submitted yet
+        [HttpGet("assigned")]
+        [Authorize]
+        public async Task<IActionResult> Assigned()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            var items = await _svc.ListAssignedPendingAsync(userId);
+            return Ok(items);
         }
     }
 }

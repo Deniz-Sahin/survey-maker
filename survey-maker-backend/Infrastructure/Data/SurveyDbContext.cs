@@ -14,6 +14,7 @@ public class SurveyDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Option> Options => Set<Option>();
     public DbSet<SurveyResponse> SurveyResponses => Set<SurveyResponse>();
     public DbSet<Answer> Answers => Set<Answer>();
+    public DbSet<SurveyAssignedUser> SurveyAssignedUsers => Set<SurveyAssignedUser>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -27,9 +28,20 @@ public class SurveyDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<Survey>()
             .HasMany(s => s.Questions)
-            .WithOne(q => q.Survey!)
-            .HasForeignKey(q => q.SurveyId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .WithMany(q => q.Surveys)
+            .UsingEntity(j => j.ToTable("SurveyQuestions"));
+
+        builder.Entity<SurveyAssignedUser>(b =>
+        {
+            b.ToTable("SurveyAssignedUsers");
+            b.HasKey(x => new { x.SurveyId, x.UserId });
+            b.HasOne(x => x.Survey)
+                .WithMany(s => s.AssignedUsers)
+                .HasForeignKey(x => x.SurveyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.Property(x => x.UserId).IsRequired();
+        });
 
         builder.Entity<SurveyResponse>()
             .HasMany(r => r.Answers)

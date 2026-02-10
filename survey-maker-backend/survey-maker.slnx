@@ -1,3 +1,7 @@
 <Solution>
+  <Project Path="../frontend/frontend.esproj">
+    <Build />
+    <Deploy />
+  </Project>
   <Project Path="survey-maker-backend.csproj" />
 </Solution>

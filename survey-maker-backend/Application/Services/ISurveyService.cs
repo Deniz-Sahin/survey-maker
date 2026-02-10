@@ -12,5 +12,7 @@ namespace SurveyMaker.Api.Application.Services
         Task UpdateAsync(int id, UpdateSurveyDto dto);
         Task DeleteAsync(int id);
         Task<int> FillAsync(int surveyId, string? userId, FillSurveyDto dto);
+        Task<SurveySubmissionsDto?> GetSubmissionsAsync(int surveyId);
+        Task<IEnumerable<AssignedSurveyListItemDto>> ListAssignedPendingAsync(string userId);
     }
 }

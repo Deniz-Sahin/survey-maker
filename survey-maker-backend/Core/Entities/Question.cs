@@ -6,8 +6,7 @@ public class Question
 {
     public int Id { get; set; }
 
-    public int SurveyId { get; set; }
-    public Survey? Survey { get; set; }
+    public ICollection<Survey> Surveys { get; set; } = new List<Survey>();
 
     public string Text { get; set; } = string.Empty;
     public bool IsMultipleChoice { get; set; }

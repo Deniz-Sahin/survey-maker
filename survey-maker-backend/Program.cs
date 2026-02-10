@@ -15,7 +15,10 @@ builder.Services.AddOpenApi();
 // --- CORS: read allowed origins from configuration (comma-separated) ---
 var allowedOrigins = builder.Configuration.GetValue<string>("Cors:AllowedOrigins")?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    ?? new[] { "http://localhost:3000" };
+    ?? new[] { "http://localhost:64367" };
+
+// debug: show resolved allowed origins
+Console.WriteLine("CORS allowed origins: " + string.Join(", ", allowedOrigins));
 
 builder.Services.AddCors(options =>
 {
@@ -26,6 +29,14 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowCredentials();
     });
+
+    // TEMP for debugging only: if this fixes the issue, the problem is origin matching / redirect
+    options.AddPolicy("PermissiveCorsForDebug", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 // Infrastructure (DbContext, Identity, JWT, etc.)
@@ -34,6 +45,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
 
 var app = builder.Build();
 
@@ -101,7 +113,6 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseHttpsRedirection();
 }
 
 // Use CORS before authentication/authorization

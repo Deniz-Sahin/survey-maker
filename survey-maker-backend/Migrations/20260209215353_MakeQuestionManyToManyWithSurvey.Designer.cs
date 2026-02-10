@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SurveyMaker.Infrastructure.Data;
@@ -11,9 +12,11 @@ using SurveyMaker.Infrastructure.Data;
 namespace survey_maker_backend.Migrations
 {
     [DbContext(typeof(SurveyDbContext))]
-    partial class SurveyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260209215353_MakeQuestionManyToManyWithSurvey")]
+    partial class MakeQuestionManyToManyWithSurvey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -249,15 +252,6 @@ namespace survey_maker_backend.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
@@ -265,19 +259,6 @@ namespace survey_maker_backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Surveys");
-                });
-
-            modelBuilder.Entity("SurveyMaker.Core.Entities.SurveyAssignedUser", b =>
-                {
-                    b.Property<int>("SurveyId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.HasKey("SurveyId", "UserId");
-
-                    b.ToTable("SurveyAssignedUsers", (string)null);
                 });
 
             modelBuilder.Entity("SurveyMaker.Core.Entities.SurveyResponse", b =>
@@ -456,17 +437,6 @@ namespace survey_maker_backend.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("SurveyMaker.Core.Entities.SurveyAssignedUser", b =>
-                {
-                    b.HasOne("SurveyMaker.Core.Entities.Survey", "Survey")
-                        .WithMany("AssignedUsers")
-                        .HasForeignKey("SurveyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Survey");
-                });
-
             modelBuilder.Entity("SurveyMaker.Core.Entities.SurveyResponse", b =>
                 {
                     b.HasOne("SurveyMaker.Core.Entities.Survey", "Survey")
@@ -481,11 +451,6 @@ namespace survey_maker_backend.Migrations
             modelBuilder.Entity("SurveyMaker.Core.Entities.Question", b =>
                 {
                     b.Navigation("Options");
-                });
-
-            modelBuilder.Entity("SurveyMaker.Core.Entities.Survey", b =>
-                {
-                    b.Navigation("AssignedUsers");
                 });
 
             modelBuilder.Entity("SurveyMaker.Core.Entities.SurveyResponse", b =>
